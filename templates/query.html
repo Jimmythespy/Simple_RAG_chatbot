@@ -1,0 +1,522 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ChatGPT Input Box</title>
+    <style>
+        p {
+            display: block;
+            margin-block-start: 0em;
+            margin-block-end: 0em;
+            margin-inline-start: 0px;
+            margin-inline-end: 0px;
+            unicode-bidi: isolate;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f4f4f4;
+        }
+        .chat-container {
+            position: fixed;
+            bottom: 20px;
+            width: 100%;
+            max-width: 600px;
+        }
+        .chat-input-box {
+            display: flex;
+            align-items: center;
+            background: white;
+            border: 1px solid #ccc;
+            border-radius: 25px;
+            padding: 10px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+        }
+        .chat-input {
+            flex: 1;
+            border: none;
+            outline: none;
+            padding: 10px;
+            font-size: 16px;
+            border-radius: 20px;
+        }
+        .send-button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            margin-left: 10px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        .send-button:hover {
+            background-color: #0056b3;
+        }
+        .loading {
+            font-size: 14px;
+            margin-right: 10px;
+            display: none;
+        }
+        #answer-container {
+            width: 80%;
+            max-width: 600px;
+            height: 65%;
+            border: 1px solid #ccc;
+            padding: 20px;
+            padding-left: 30px;
+            padding-right: 30px;
+            background: #f9f9f9;
+            border-radius: 20px;
+            font-size: 18px;
+            margin-bottom: 10px;
+            justify-content: right;
+        }
+        
+        .floating-button {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 12px 15px;
+            font-size: 16px;
+            border-radius: 100px;
+            cursor: pointer;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        .floating-button:hover {
+            background-color: #0056b3;
+            box-shadow: 0 6px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Floating Title */
+        .floating-title {
+            position: fixed;
+            top: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 24px;
+            font-weight: bold;
+            color: #333;
+            background: rgba(255, 255, 255, 0.8);
+            padding: 10px 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+
+        #question {
+            display: block;
+            margin-bottom: 10px;
+        }
+
+        #citation {
+            display: none;
+            font-size: 16px;
+            color: #000000e2;
+            margin-top: 10px;
+        }
+
+        #answer {
+            display: none
+        }
+
+        .button-list {
+            list-style: none;
+            padding: 0;
+        }
+        .button-list li {
+            margin: 8px 0;
+        }
+        .button {
+            display: block;
+            width: 100%;
+            padding: 12px;
+            text-align: center;
+            background-color: #888888;
+            color: white;
+            text-decoration: none;
+            font-size: 14px;
+            border-radius: 200px;
+            transition: 0.2s;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            justify-self: center;
+        } 
+
+        .button:hover {
+            background-color: #545454;
+            transform: scale(1.02);
+        }
+
+        .suggestion_container {
+            display: none;
+            position: fixed;
+            bottom: 17%
+        }
+
+        .suggestion_title {
+            font-size: 17px;
+        
+        } 
+
+        #answer-window {
+            overflow: auto;
+            height: 55%;
+        }
+
+    </style>
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+</head>
+<body>
+    <div class="floating-title">ASK QUESTION ABOUT THE UPLOADED CONTENT</div>
+    
+    <div id="answer-container">
+        <div id="answer-window">
+            <p id="question">Start By Typing Into The Chat</p>
+            <p id="answer"><strong>Answer </strong></p>
+            <p id="citation"><strong>Citation: </strong></p>
+        </div>
+
+        <div class="suggestion_container" id="suggestion_container">
+            <p class="suggestion_title">Suggestion: </p>
+            <ul class="button-list">
+                <li><a href="#" class="button" id="bt1" onclick="suggestButtonHandler(event, 0)">Button 1</a></li>
+                <li><a href="#" class="button" id="bt2" onclick="suggestButtonHandler(event, 1)">Button 2</a></li>
+                <li><a href="#" class="button" id="bt3" onclick="suggestButtonHandler(event, 2)">Button 3</a></li>
+            </ul>
+        </div>
+    </div>
+    
+    <button class="floating-button" onclick="uploadRedirect()"><i class="fa fa-plus" aria-hidden="true"></i></i></button>
+
+    <div class="chat-container">
+        <div class="chat-input-box">
+            <input type="text" id="chatInput" class="chat-input" placeholder="Type a message..." onkeypress="keyhandler(event)">
+            <p id="loading" class="loading">Loading...</p>
+            <button class="send-button" onclick="sendClickHandler(event)">➤</button>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script>
+        const answer = document.getElementById("answer")
+        const questionText = document.getElementById("question")
+        const citation = document.getElementById("citation")
+        const suggestion = document.getElementById("suggestion_container")
+        const bt = [document.getElementById("bt1"), document.getElementById("bt2"), document.getElementById("bt3")]
+        const chatInput = document.getElementById("chatInput");
+        let eventSource = null;
+
+        marked.setOptions({
+            gfm: true,  // Enable GitHub Flavored Markdown
+            breaks: true // Convert single newlines to <br>
+        });
+
+
+        let state_var = false
+
+        marked.setOptions({
+            breaks: true, // Converts line breaks (\n) into <br>
+            gfm: true
+        });
+
+        async function callAPI(question) {
+            document.getElementById("loading").style.display = "block"
+
+            if (question == "") {
+                return
+            }
+
+            // Create payload
+            const payload = {
+                question: question,
+                time: Date.now()
+            };
+
+            try {
+                const response = await fetch('http://127.0.0.1:8000/query', {
+                    method: 'POST', 
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! Status: ${response.status}`);
+                }
+
+                const data = await response.json();
+                // console.log('Response from FastAPI:', data.answer)
+
+                // Display the result
+                questionText.innerHTML = "<strong>Question:</strong> " + data.question
+                console.log(data.question)
+
+                answer.style.display = "block"
+                answer.innerHTML = "<strong>Answer:</strong> " + data.answer
+
+                if (data.value.source != undefined){
+                    citation.style.display = "block"
+                    citation.innerHTML = "<strong>Source:</strong> " + data.value.source
+                } else {
+                    citation.style.display = "none"
+                }
+
+                // Display the suggestion question
+                suggestion.style.display = "block"
+                bt[0].innerHTML = data.suggestion[0]
+                bt[1].innerHTML = data.suggestion[1]
+                bt[2].innerHTML = data.suggestion[2]
+
+                document.getElementById("loading").style.display = "none"
+            } catch (error) {
+                console.error('Error calling FastAPI:', error);
+                suggestion.style.display = "none"
+                document.getElementById("loading").style.display = "none"
+            }
+
+            // Clear the input field
+            document.getElementById("chatInput").value = ""
+        }
+
+        // State management: indicate whether fe waiting for response from be
+        function stateManagement(state) {
+            if(state){
+                state_var = true
+                // is Loading disable all button and prevent more query
+                document.getElementsByClassName("send-button").disabled = true
+                bt[0].disabled = true
+                bt[1].disabled = true
+                bt[2].disabled = true
+            } else {
+                state_var = false
+                // is Loading disable all button and prevent more query
+                document.getElementsByClassName("send-button").disabled = false
+                bt[0].disabled = false
+                bt[1].disabled = false
+                bt[2].disabled = false
+            }
+        }
+
+        // Clear screen:
+        function clearScreen() {
+            answer.innerText = ""
+            citation.innerText = ""
+            chatInput.value = ""
+            suggestion.style.display = "none"
+        }
+
+        // Handle Enter keypress event
+        async function keyhandler(e){
+            if(e.keyCode === 13){
+                e.preventDefault(); 
+
+                let question = chatInput.value
+                console.log("question", question)
+
+                if(question == "" || question == undefined){
+                    alert("Plz type in the question")
+                    return
+                }
+
+                if (state_var) {
+                    alert("loading")
+                    return
+                }
+
+                stateManagement(true)
+                
+                clearScreen()   // Clear the screen
+
+                await Promise.all([
+                    queryStream(question),
+                    suggestionQuery(question),
+                ])
+            }
+        }
+
+        function replaceDoubleNewlines(text) {
+            return text.replace(/\s*\n\s*\n/g, "  \n")
+        }
+
+        // Convert Markdown to HTML
+        async function convertMarkdownToHTML() {
+            console.log("started")
+            let markdownText = answer.textContent;
+ 
+            let html = marked.parse(markdownText); 
+            html = String(html).replace("\n\n", " <br>")
+
+            console.log(html)
+            console.log(markdownText)
+            answer.innerHTML = html
+        }
+ 
+        // Handle send button click
+        async function sendClickHandler(e){
+            if (!state_var) {
+                e.preventDefault(); 
+
+                let question = chatInput.value
+                console.log("question", question)
+
+                if(question == ""){
+                    alert("Plz type in the question")
+                    return
+                }
+                
+                stateManagement(true)
+
+                clearScreen()   // Clear the screen
+                await Promise.all([
+                    queryStream(question),
+                    suggestionQuery(question),
+                ])
+            }
+        }
+
+        // Handle Clicking suggestion question button
+        async function suggestButtonHandler(e, index) {
+            console.log("state_var", state_var)
+            if(!state_var) {
+                e.preventDefault(); // Ensure it is only this code that runs
+                clearScreen()   // Clear the screen
+
+                await Promise.all([
+                    queryStream(bt[index].innerHTML),
+                    suggestionQuery(bt[index].innerHTML),
+                ])
+            }
+        }
+
+        // Request question suggestion 
+        async function suggestionQuery(question) {
+            // Create payload
+            const payload = {
+                question: question,
+                time: Date.now()
+            };
+
+            const response = await fetch('http://127.0.0.1:8000/suggestion', {
+                    method: 'POST',
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify(payload)
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! Status: ${response.status}`);
+            }
+
+            const data = JSON.parse(await response.json());
+
+            // Display the suggestion question
+            suggestion.style.display = "block"
+            bt[0].innerHTML = data.suggestion[0]
+            bt[1].innerHTML = data.suggestion[1]
+            bt[2].innerHTML = data.suggestion[2]
+        }
+
+        // SSE streaming
+        async function queryStream(question) {
+            let result = ""
+
+            // Create payload
+            const payload = {
+                question: question,
+                time: Date.now()
+            };
+            
+            // Step 1: Send POST request to get a request ID
+            const response = await fetch("/start-stream", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload)
+            });
+
+            const data = await response.json();
+            const requestId = data.request_id;
+
+            // Step 2: Open SSE connection with request_id
+            eventSource = new EventSource(`/stream?request_id=${requestId}`);
+
+            // Display the results
+            questionText.innerHTML = "<strong>Question:</strong> " + question
+
+            eventSource.onmessage = (event) => {
+                if (eventSource == null || eventSource.readyState == 2){
+                    return
+                }
+                answer.style.display = "block"
+
+                let data = event.data.match(/content='(.*?)'/);
+
+                // console.log("data", data)
+
+                if (data == null) {
+                    data = event.data.match(/content="(.*?)"/);
+                }
+                
+                const contentValue = data[1];
+
+                result = result + contentValue
+                answer.innerText = result;
+            };
+
+            eventSource.onerror = (error) => {
+                console.error("SSE Error:", error);
+
+                // Get the source of the query
+                fetch(`/source?request_id=${requestId}`, {
+                    method: "GET",
+                }).then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! Status: ${response.status}`);
+                    }
+                    return response.json(); // Convert response to JSON
+                }).then((data) => {
+                    console.log(data.source.source)
+
+                    if (data.source.source != undefined){
+                        citation.style.display = "block"
+                        citation.innerHTML = "<strong>Source:</strong> " + data.source.source
+                    } else {
+                        citation.style.display = "none"
+                    }
+
+                }).catch((err) => {
+                    console.log(error)
+                })
+
+                convertMarkdownToHTML().then().catch()
+
+                stateManagement(false)
+
+                // Clear the input field
+                eventSource.close();
+                eventSource = null;
+            };
+        }
+        
+        // Redirect the UI
+        function uploadRedirect() {
+            window.location.href = "http://127.0.0.1:8000/uploadfile_ui";
+        }
+    </script>
+
+</body>
+</html>
